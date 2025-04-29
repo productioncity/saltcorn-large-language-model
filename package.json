@@ -3,46 +3,15 @@
   "version": "0.0.1",
   "description": "Large language models and functionality for Saltcorn",
   "main": "index.js",
-  "author": "Tom Nielsen",
-  "license": "MIT",
+  "author": "Troy Kelly",
+  "license": "CC0-1.0",
   "repository": "github:productioncity/saltcorn-large-language-model",
   "publishConfig": {
     "access": "public"
   },
   "packageManager": "yarn@4.9.1",
-  "eslintConfig": {
-    "extends": "eslint:recommended",
-    "parserOptions": {
-      "ecmaVersion": 2020
-    },
-    "env": {
-      "node": true,
-      "es6": true
-    },
-    "rules": {
-      "no-unused-vars": "off",
-      "no-case-declarations": "off",
-      "no-empty": "warn",
-      "no-fallthrough": "warn"
-    }
-  },
-  "resolutions": {
-    "nopt": "8.1.0",
-    "node-gyp": "8.4.1",
-    "glob": "7.2.3",
-    "csvtojson": "2.0.10",
-    "mjml": "4.14.0",
-    "gtoken": "7.1.0",
-    "live-plugin-manager": "0.17.1"
-  },
   "devDependencies": {
     "@saltcorn/data": "^1.1.4",
     "@saltcorn/types": "^1.1.4"
-  },
-  "dependencies": {
-    "@google-cloud/aiplatform": "^4.1.0",
-    "@google-cloud/vertexai": "^1.10.0",
-    "googleapis": "^148.0.0",
-    "underscore": "^1.13.7"
   }
 }
