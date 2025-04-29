@@ -9,8 +9,5 @@
   "publishConfig": {
     "access": "public"
   },
-  "dependencies": {
-    "@saltcorn/data": "^1.1.4",
-    "@saltcorn/types": "^1.1.4"
-  }
+  "dependencies": {}
 }
