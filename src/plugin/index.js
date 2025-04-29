@@ -1,94 +1,96 @@
 /**
- * Saltcorn Large-Language-Model plug-in
+ * Saltcorn Large-Language-Model plug-in – bootstrap.
  *
- * Entry-point that registers the plug-in with Saltcorn.  ALL logic is delegated
- * to the provider / helper modules in ./providers and ./lib.
+ * For now the plug-in only registers:
+ *   • A configuration workflow with placeholders for provider credentials.
+ *   • A lightweight diagnostic logger (see ./lib/logger.js).
  *
- * Purpose:   Bootstrap file – minimal, deliberately “feature-free”.
- * Author:    Troy Kelly <troy@team.production.city>
+ * Author:   Troy Kelly <troy@team.production.city>
  * History:
- *   • 29 Apr 2025 – Initial scaffolding                                     TK
- *
- * NOTE:  Every method currently throws “Not implemented”.  Implementation will
- *        follow in subsequent commits.
+ *   • 29 Apr 2025 – Initial scaffold and logging helper.            TK
  */
+
 'use strict';
 
-/* -------------------------------------------------------------------------- */
-/* 1.  Node / Saltcorn imports (none needed yet)                              */
-/* -------------------------------------------------------------------------- */
+const Logger   = require('./lib/logger');
+const { ENV_DEBUG_VAR, PROVIDERS } = require('./constants');
 
-/* -------------------------------------------------------------------------- */
-/* 2.  Public API required by Saltcorn                                        */
-/* -------------------------------------------------------------------------- */
+/* --------------------------------------------------------------------- */
+/* 1.  Configuration workflow (runs in Saltcorn admin UI)               */
+/* --------------------------------------------------------------------- */
+function configuration_workflow(cfg = {}) {
+  /* Persist debug flag to logger on form save */
+  Logger.configure(cfg);
 
-/**
- * Saltcorn looks for the named exports below when it loads a plug-in.
- *
- * @see https://docs.saltcorn.com/plugin-dev/quickstart
- */
+  const providerSection = (label, fields) => ({
+    name: label,
+    form: {
+      fields,
+    },
+  });
+
+  return {
+    steps: [
+      /* --------- General settings (debug flag) --------- */
+      providerSection('General', [
+        {
+          name:  'debug_enabled',
+          label: `Enable verbose logging (${ENV_DEBUG_VAR})`,
+          type:  'Bool',
+          default: false,
+        },
+      ]),
+
+      /* --------- OpenAI -------------------------------- */
+      providerSection('OpenAI', [
+        { name: 'openai_endpoint', label: 'Endpoint URL', type: 'String' },
+        { name: 'openai_api_key',  label: 'API Key',      type: 'String', input_type: 'password' },
+      ]),
+
+      /* --------- OpenAI-compatible --------------------- */
+      providerSection('OpenAI Compatible', [
+        { name: 'compat_endpoint', label: 'Endpoint URL', type: 'String' },
+        { name: 'compat_api_key',  label: 'API Key',      type: 'String', input_type: 'password' },
+        { name: 'compat_completion', label: 'Supports completion', type: 'Bool' },
+        { name: 'compat_embedding',  label: 'Supports embedding',  type: 'Bool' },
+        { name: 'compat_images',     label: 'Supports image gen.', type: 'Bool' },
+      ]),
+
+      /* --------- Google Vertex ------------------------- */
+      providerSection('Google Vertex AI', [
+        {
+          name: 'vertex_oauth',
+          label: 'Authorise',
+          type:  'String',
+          input_type: 'custom_html',
+          attributes: { html: '<button class="btn btn-primary">Authorise…</button>' },
+        },
+      ]),
+    ],
+  };
+}
+
+/* --------------------------------------------------------------------- */
+/* 2.  Plug-in export                                                    */
+/* --------------------------------------------------------------------- */
 module.exports = {
   sc_plugin_api_version: 1,
+  plugin_name: '@productioncity/saltcorn-llm',
 
-  /**
-   * Initialise the plug-in.  Runs once when Saltcorn starts.
-   *
-   * @param   {object} opts Injected Saltcorn services (db, state, …)
-   * @returns {void}
-   */
-  init: (opts) => {
-    // Placeholder – plugin initialisation logic goes here later.
-    throw new Error('Large-Language-Model plug-in initialisation not implemented.');
+  /* ------------ Initialisation --------------------------------------- */
+  init: (cfg = {}) => {
+    Logger.configure(cfg);
+    Logger.info('LLM plug-in initialised (debug %s)', Logger.enabled ? 'on' : 'off');
   },
 
-  /**
-   * Teardown – executed when Saltcorn shuts down or the plug-in is disabled.
-   *
-   * @returns {void}
-   */
   unload: () => {
-    // Placeholder – cleanup logic goes here later.
+    Logger.info('LLM plug-in unloaded.');
   },
 
-  /* ---------------------------------------------------------------------- */
-  /*  Actions exposed to workflows / views – each calls into provider layer */
-  /* ---------------------------------------------------------------------- */
+  configuration_workflow,
 
-  actions: {
-    llm_completion: {
-      description: 'LLM text completion (provider-agnostic)',
-      configFields: () => [
-        { name: 'provider', label: 'Provider', type: 'String' },
-        { name: 'model',    label: 'Model ID', type: 'String' },
-        { name: 'prompt',   label: 'Prompt',   type: 'String' }
-      ],
-      run: async () => {
-        throw new Error('llm_completion action not implemented.');
-      },
-    },
+  /* ------------ Placeholder actions (to be implemented) -------------- */
+  actions: {},
 
-    llm_embedding: {
-      description: 'LLM embedding (provider-agnostic)',
-      configFields: () => [
-        { name: 'provider', label: 'Provider', type: 'String' },
-        { name: 'model',    label: 'Model ID', type: 'String' },
-        { name: 'input',    label: 'Input',    type: 'String' }
-      ],
-      run: async () => {
-        throw new Error('llm_embedding action not implemented.');
-      },
-    },
-
-    llm_image_generation: {
-      description: 'LLM image generation (provider-agnostic)',
-      configFields: () => [
-        { name: 'provider', label: 'Provider', type: 'String' },
-        { name: 'model',    label: 'Model ID', type: 'String' },
-        { name: 'prompt',   label: 'Prompt',   type: 'String' }
-      ],
-      run: async () => {
-        throw new Error('llm_image_generation action not implemented.');
-      },
-    },
-  },
+  /* Types, viewtemplates, etc. intentionally left empty for now. */
 };

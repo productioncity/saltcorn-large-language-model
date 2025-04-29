@@ -1,72 +1,39 @@
 /**
  * Abstract base-class for all LLM providers.
  *
- * Concrete providers (OpenAI, Olama, …) extend this class and implement the
- * three public methods: `complete`, `embed`, and `generateImage`.
- *
  * Author:   Troy Kelly <troy@team.production.city>
  * History:
- *   • 29 Apr 2025 – Initial scaffold                                        TK
+ *   • 29 Apr 2025 – Added logger integration.                     TK
  */
 
 'use strict';
+
+const Logger = require('../lib/logger'); // Singleton logger
 
 /* eslint-disable class-methods-use-this */
 
 class BaseProvider {
   /**
-   * @param {object} cfg Provider-specific configuration object.
+   * @param {object} cfg Provider-specific configuration.
    */
   constructor(cfg = {}) {
     this.cfg = cfg;
+    this.log = Logger;          // Convenience alias for subclasses
   }
 
-  /* ------------------------------------------------------------------ */
-  /* 1.  Completion                                                      */
-  /* ------------------------------------------------------------------ */
-
-  /**
-   * Text completion / chat.
-   *
-   * @param   {string} model   Model ID.
-   * @param   {string} prompt  Prompt text.
-   * @param   {object} opts    Extra parameters (temperature, …)
-   * @returns {Promise<string>}
-   */
-  async complete(model, prompt, opts) {
-    void model; void prompt; void opts;
-    throw new Error('complete() not implemented in BaseProvider.');
+  /* ------------------------------ Completion ------------------------- */
+  async complete(/* model, prompt, opts */) {
+    throw new Error('complete() not implemented.');
   }
 
-  /* ------------------------------------------------------------------ */
-  /* 2.  Embedding                                                       */
-  /* ------------------------------------------------------------------ */
-  /**
-   * Vector embedding.
-   *
-   * @param   {string} model Model ID.
-   * @param   {string[]} input Array of texts.
-   * @returns {Promise<number[][]>}
-   */
-  async embed(model, input) {
-    void model; void input;
-    throw new Error('embed() not implemented in BaseProvider.');
+  /* ------------------------------ Embedding -------------------------- */
+  async embed(/* model, input */) {
+    throw new Error('embed() not implemented.');
   }
 
-  /* ------------------------------------------------------------------ */
-  /* 3.  Image generation                                                */
-  /* ------------------------------------------------------------------ */
-  /**
-   * Create an image from a prompt.
-   *
-   * @param   {string} model  Model ID.
-   * @param   {string} prompt Prompt text.
-   * @param   {object} opts   Model-specific parameters (size, n, …)
-   * @returns {Promise<object>} Provider-specific response.
-   */
-  async generateImage(model, prompt, opts) {
-    void model; void prompt; void opts;
-    throw new Error('generateImage() not implemented in BaseProvider.');
+  /* ------------------------------ Images ----------------------------- */
+  async generateImage(/* model, prompt, opts */) {
+    throw new Error('generateImage() not implemented.');
   }
 }
 
