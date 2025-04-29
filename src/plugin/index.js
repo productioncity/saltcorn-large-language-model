@@ -3,51 +3,39 @@
  * Saltcorn Large-Language-Model Plug-in – Bootstrap
  * ============================================================================
  *
- *  • Conforms to the Saltcorn “plug-in model” (v1) as outlined in the
- *    documentation excerpt provided in the specification.
- *  • Only stubs are supplied for optional hooks – these can be fleshed-out as
- *    implementation work proceeds.  Empty objects/arrays are completely safe.
- *  • The plug-in purposely avoids external run-time dependencies; everything
- *    relies on Node v18 and the Saltcorn runtime bundled libraries.
+ *  • Conforms precisely to the Saltcorn plug-in signature.  Keys that Saltcorn
+ *    CALLS must be FUNCTIONS – therefore `layout` is now a function returning
+ *    an (empty) layout object.
+ *  • All optional hooks are safe “no-ops”; they exist only to satisfy loader
+ *    checks and can be fleshed-out incrementally.
  *
  *  Author:   Troy Kelly <troy@team.production.city>
- *  Created:  29 Apr 2025
- *  Licence:  CC-0 – Public Domain
- * ---------------------------------------------------------------------------
+ *  Updated:  29 Apr 2025
+ * ----------------------------------------------------------------------------
  */
 
 'use strict';
 
 /* ------------------------------------------------------------------ */
-/* 1.  Internal helpers                                               */
+/* 1.  Internals                                                      */
 /* ------------------------------------------------------------------ */
-const Logger               = require('./lib/logger');
-const { ENV_DEBUG_VAR }    = require('./constants');
+const Logger            = require('./lib/logger');
+const { ENV_DEBUG_VAR } = require('./constants');
 
-/**
- * Simple two-column section creator for configuration_workflow().
- * @param {string} label
- * @param {object[]} fields
- * @returns {object}
- */
-function section(label, fields) {
-  return { name: label, form: { fields } };
-}
+const section = (label, fields) => ({ name: label, form: { fields } });
 
 /* ------------------------------------------------------------------ */
 /* 2.  Configuration Workflow                                         */
 /* ------------------------------------------------------------------ */
 function configuration_workflow(existing = {}) {
-  /* The workflow persists the user’s preferences in Saltcorn’s
-     _sc_config table – nothing to do at run-time except read them back. */
   return {
     steps: [
       /* ────────────────────────────────────────────────────────────── */
       section('General', [
         {
-          name : 'debug_enabled',
-          label: `Verbose logging (${ENV_DEBUG_VAR})`,
-          type : 'Bool',
+          name   : 'debug_enabled',
+          label  : `Verbose logging (${ENV_DEBUG_VAR})`,
+          type   : 'Bool',
           default: !!existing.debug_enabled,
         },
       ]),
@@ -81,21 +69,17 @@ function configuration_workflow(existing = {}) {
           label: 'Authorise',
           type : 'String',
           input_type: 'custom_html',
-          attributes: {
-            html: '<button class="btn btn-primary">Authorise…</button>',
-          },
+          attributes: { html: '<button class="btn btn-primary">Authorise…</button>' },
         },
       ]),
-      /* ---------------------------------------------------------------- */
     ],
   };
 }
 
 /* ------------------------------------------------------------------ */
-/* 3.  Saltcorn Plug-in Export                                         */
+/* 3.  Plug-in Export                                                 */
 /* ------------------------------------------------------------------ */
 module.exports = {
-  /* ---- Mandatory fields ------------------------------------------ */
   sc_plugin_api_version: 1,
   plugin_name         : 'saltcorn-large-language-model',
 
@@ -104,7 +88,6 @@ module.exports = {
     Logger.configure(configuration);
     Logger.info('LLM plug-in loaded ✅');
   },
-
   unload() {
     Logger.info('LLM plug-in unloaded 🛑');
   },
@@ -112,16 +95,21 @@ module.exports = {
   /* ---- Configuration -------------------------------------------- */
   configuration_workflow,
 
-  /* ---- UI / Layout ---------------------------------------------- */
-  layout : {},         // No top-level layout customisations (yet)
+  /* ---- Layout (MUST be function) -------------------------------- */
+  layout() {
+    /* Return an (optional) Layout customisation object.
+       Empty object keeps Saltcorn loader satisfied. */
+    return {};
+  },
+
   headers: [],
 
-  /* ---- Functional hooks (stubs) --------------------------------- */
-  actions        : {},          // Trigger actions
-  authentication : null,        // Custom auth not required
-  eventTypes     : {},          // Custom events
+  /* ---- Functional hooks (safe stubs) ----------------------------- */
+  actions        : {},
+  authentication : undefined,
+  eventTypes     : {},
   external_tables: [],
-  functions      : {},          // Code-trigger helpers
+  functions      : {},
   viewtemplates  : [],
   fieldviews     : {},
   fileviews      : {},
@@ -129,8 +117,9 @@ module.exports = {
   table_providers: [],
   types          : [],
 
-  /* ---- Misc. ----------------------------------------------------- */
-  verifier_workflow: null,
+  verifier_workflow: undefined,
+
+  /* ---- Misc. metadata ------------------------------------------- */
   dependencies      : [],
   serve_dependencies: [],
 };
