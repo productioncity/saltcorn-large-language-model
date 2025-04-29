@@ -1,23 +1,18 @@
 /**
- * ============================================================================
+ * =============================================================================
  * Saltcorn Large-Language-Model Plug-in – Bootstrap
- * ============================================================================
- *
- *  • Conforms to Saltcorn’s plug-in contract.  When a plug-in exposes a
- *    `configuration_workflow` **Saltcorn expects _every other optional hook_**
- *    (types, actions, viewtemplates, …) to be FUNCTIONS – not plain values.
- *    Failing to do so yields the runtime error: “plugin[key] is not a function”.
- *
- *  • This file therefore provides function-wrappers that return the underlying
- *    data structures.  The data are currently empty stubs – they will be
- *    populated incrementally as functionality is implemented.
- *
- *  • Implementation logic lives in `src/` – here we only register and expose
- *    the plug-in surface.
+ * =============================================================================
+ *  • When a plug-in exposes a `configuration_workflow` Saltcorn *always calls*
+ *    every other optional hook (types, actions, viewtemplates, …).  Each hook
+ *    must therefore be a FUNCTION.  Missing or non-function hooks trigger the
+ *    runtime error: “plugin[key] is not a function”.
+ *  • This file exports wrappers – one for every recognised hook – that return
+ *    empty placeholders.  Real implementations can replace the placeholders
+ *    incrementally without breaking installation.
  *
  *  Author:   Troy Kelly <troy@team.production.city>
  *  Updated:  29 Apr 2025
- * ----------------------------------------------------------------------------
+ * -----------------------------------------------------------------------------
  */
 
 'use strict';
@@ -28,14 +23,7 @@
 const Logger            = require('./lib/logger');
 const { ENV_DEBUG_VAR } = require('./constants');
 
-/**
- * Convenience for composing Saltcorn “section” objects in a configuration
- * workflow.
- *
- * @param   {string} label  Section heading.
- * @param   {Array}  fields Saltcorn field definitions.
- * @returns {{name:string, form:{fields:Array}}}
- */
+/** Utility – Saltcorn “section” helper for config workflows. */
 const section = (label, fields) => ({ name: label, form: { fields } });
 
 /* -------------------------------------------------------------------------- */
@@ -44,7 +32,7 @@ const section = (label, fields) => ({ name: label, form: { fields } });
 function configuration_workflow(existing = {}) {
   return {
     steps: [
-      /* ─────────── General ─────────────────────────────────────────────── */
+      /* ─── General ────────────────────────────────────────────────────── */
       section('General', [
         {
           name   : 'debug_enabled',
@@ -54,7 +42,7 @@ function configuration_workflow(existing = {}) {
         },
       ]),
 
-      /* ─────────── OpenAI ------------------------------------------------ */
+      /* ─── OpenAI ------------------------------------------------------- */
       section('OpenAI', [
         { name: 'openai_endpoint', label: 'Endpoint URL', type: 'String' },
         {
@@ -65,7 +53,7 @@ function configuration_workflow(existing = {}) {
         },
       ]),
 
-      /* ─────────── OpenAI-compatible (local proxies etc.) ---------------- */
+      /* ─── OpenAI-compatible ------------------------------------------- */
       section('OpenAI Compatible', [
         { name: 'compat_endpoint', label: 'Endpoint URL', type: 'String' },
         {
@@ -79,14 +67,14 @@ function configuration_workflow(existing = {}) {
         { name: 'compat_images',     label: 'Supports images',     type: 'Bool' },
       ]),
 
-      /* ─────────── Google Vertex AI ------------------------------------- */
+      /* ─── Google Vertex AI -------------------------------------------- */
       section('Google Vertex AI', [
         {
           name : 'vertex_oauth',
           label: 'Authorise',
           type : 'String',
-          input_type: 'custom_html',
-          attributes: { html: '<button class="btn btn-primary">Authorise…</button>' },
+          input_type : 'custom_html',
+          attributes : { html: '<button class="btn btn-primary">Authorise…</button>' },
         },
       ]),
     ],
@@ -94,49 +82,47 @@ function configuration_workflow(existing = {}) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 3.  Helper: empty-but-safe function wrapper                                */
+/* 3.  Helper – create “empty but callable” wrappers                          */
 /* -------------------------------------------------------------------------- */
-/** Used for every optional hook until real content is provided. */
-const returns =
-  (value) =>
-    function wrapped() { return value; };
+const returns = (value) => function wrapped() { return value; };
 
 /* -------------------------------------------------------------------------- */
 /* 4.  Plug-in Export                                                         */
 /* -------------------------------------------------------------------------- */
 module.exports = {
-  /* ---- Mandatory metadata ------------------------------------------------ */
+  /* ---- Required metadata ------------------------------------------------- */
   sc_plugin_api_version: 1,
   plugin_name         : 'saltcorn-large-language-model',
 
-  /* ---- Life-cycle hooks -------------------------------------------------- */
-  onLoad(configuration = {}) {
-    Logger.configure(configuration);      // honour run-time settings
+  /* ---- Lifecycle --------------------------------------------------------- */
+  onLoad(cfg = {}) {
+    Logger.configure(cfg);
     Logger.info('LLM plug-in loaded ✅');
   },
   unload() { Logger.info('LLM plug-in unloaded 🛑'); },
 
-  /* ---- Configuration Workflow ------------------------------------------- */
+  /* ---- Configuration ----------------------------------------------------- */
   configuration_workflow,
 
-  /* ---- Saltcorn expects LAYOUT to be a *function* ----------------------- */
-  layout: returns({}),           // future custom layouts will replace this
-
-  /* ---- Optional extensibility hooks (currently stubs) ------------------- */
-  types          : returns([]),
-  viewtemplates  : returns([]),
-  fieldviews     : returns({}),
-  fileviews      : returns({}),
-  actions        : returns({}),
-  functions      : returns({}),
-  eventTypes     : returns({}),
-  external_tables: returns([]),
-  routes         : returns({}),
-  table_providers: returns([]),
-
-  /* ---- Misc. metadata ---------------------------------------------------- */
-  headers           : [],
-  fonts             : {},
-  icons             : [],
-  capacitor_plugins : [],
+  /* ---- Mandatory function hooks (many are presently stubs) -------------- */
+  layout            : returns({}),
+  types             : returns([]),
+  viewtemplates     : returns([]),
+  fieldviews        : returns({}),
+  fileviews         : returns({}),
+  actions           : returns({}),
+  functions         : returns({}),
+  eventTypes        : returns({}),
+  external_tables   : returns([]),
+  table_providers   : returns([]),
+  routes            : returns({}),
+  migrations        : returns([]),
+  pages             : returns([]),
+  commands          : returns([]),
+  virtual_triggers  : returns([]),
+  patches           : returns([]),
+  headers           : returns([]),
+  fonts             : returns({}),
+  icons             : returns([]),
+  capacitor_plugins : returns([]),
 };
