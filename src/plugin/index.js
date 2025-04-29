@@ -1,33 +1,41 @@
 /**
- * =============================================================================
+ * ============================================================================
  * Saltcorn Large-Language-Model Plug-in – Bootstrap
- * =============================================================================
- *  • When a plug-in exposes a `configuration_workflow` Saltcorn *always calls*
- *    every other optional hook (types, actions, viewtemplates, …).  Each hook
- *    must therefore be a FUNCTION.  Missing or non-function hooks trigger the
- *    runtime error: “plugin[key] is not a function”.
- *  • This file exports wrappers – one for every recognised hook – that return
- *    empty placeholders.  Real implementations can replace the placeholders
+ * ============================================================================
+ *
+ *  WHY THIS FILE EXISTS
+ *  --------------------
+ *  • Saltcorn’s plug-in loader follows this rule:
+ *      If a plug-in exports a `configuration_workflow` then *all* other
+ *      optional hooks (types, actions, viewtemplates, etc.) are expected to be
+ *      FUNCTIONS that accept the per-tenant configuration object and return
+ *      the real data.  If any hook is a plain value the loader tries to
+ *      execute it and throws: “plugin[key] is not a function”.
+ *
+ *  • Therefore every optional hook is wrapped in a small function that returns
+ *    an (initially empty) stub.  Real implementations can replace the stubs
  *    incrementally without breaking installation.
  *
- *  Author:   Troy Kelly <troy@team.production.city>
- *  Updated:  29 Apr 2025
- * -----------------------------------------------------------------------------
+ *  • `layout` must also be a function in this scenario.
+ *
+ *  Author: Troy Kelly <troy@team.production.city>
+ *  Updated: 29 Apr 2025
+ * ----------------------------------------------------------------------------
  */
 
 'use strict';
 
 /* -------------------------------------------------------------------------- */
-/* 1.  Internals                                                              */
+/* 1 • Internals                                                              */
 /* -------------------------------------------------------------------------- */
 const Logger            = require('./lib/logger');
 const { ENV_DEBUG_VAR } = require('./constants');
 
-/** Utility – Saltcorn “section” helper for config workflows. */
+/* Shorthand for composing workflow “sections”. */
 const section = (label, fields) => ({ name: label, form: { fields } });
 
 /* -------------------------------------------------------------------------- */
-/* 2.  Configuration Workflow                                                 */
+/* 2 • Configuration Workflow                                                 */
 /* -------------------------------------------------------------------------- */
 function configuration_workflow(existing = {}) {
   return {
@@ -53,7 +61,7 @@ function configuration_workflow(existing = {}) {
         },
       ]),
 
-      /* ─── OpenAI-compatible ------------------------------------------- */
+      /* ─── OpenAI-compatible (local proxy) ----------------------------- */
       section('OpenAI Compatible', [
         { name: 'compat_endpoint', label: 'Endpoint URL', type: 'String' },
         {
@@ -73,8 +81,8 @@ function configuration_workflow(existing = {}) {
           name : 'vertex_oauth',
           label: 'Authorise',
           type : 'String',
-          input_type : 'custom_html',
-          attributes : { html: '<button class="btn btn-primary">Authorise…</button>' },
+          input_type: 'custom_html',
+          attributes: { html: '<button class="btn btn-primary">Authorise…</button>' },
         },
       ]),
     ],
@@ -82,30 +90,32 @@ function configuration_workflow(existing = {}) {
 }
 
 /* -------------------------------------------------------------------------- */
-/* 3.  Helper – create “empty but callable” wrappers                          */
+/* 3 • Utility – create “callable stubs”                                      */
 /* -------------------------------------------------------------------------- */
-const returns = (value) => function wrapped() { return value; };
+const returns = (value) => function stub() { return value; };
 
 /* -------------------------------------------------------------------------- */
-/* 4.  Plug-in Export                                                         */
+/* 4 • Plug-in Export                                                         */
 /* -------------------------------------------------------------------------- */
 module.exports = {
-  /* ---- Required metadata ------------------------------------------------- */
+  /* Mandatory metadata ---------------------------------------------------- */
   sc_plugin_api_version: 1,
   plugin_name         : 'saltcorn-large-language-model',
 
-  /* ---- Lifecycle --------------------------------------------------------- */
+  /* Lifecycle hooks ------------------------------------------------------- */
   onLoad(cfg = {}) {
     Logger.configure(cfg);
     Logger.info('LLM plug-in loaded ✅');
   },
   unload() { Logger.info('LLM plug-in unloaded 🛑'); },
 
-  /* ---- Configuration ----------------------------------------------------- */
+  /* Configuration --------------------------------------------------------- */
   configuration_workflow,
 
-  /* ---- Mandatory function hooks (many are presently stubs) -------------- */
+  /* Saltcorn expects a *function* when configuration_workflow is present -- */
   layout            : returns({}),
+
+  /* Optional hooks – all callable stubs for now --------------------------- */
   types             : returns([]),
   viewtemplates     : returns([]),
   fieldviews        : returns({}),
