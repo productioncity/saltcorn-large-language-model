@@ -10,7 +10,7 @@
     "access": "public"
   },
   "packageManager": "yarn@4.9.1",
-  "devDependencies": {
+  "dependencies": {
     "@saltcorn/data": "^1.1.4",
     "@saltcorn/types": "^1.1.4"
   }
