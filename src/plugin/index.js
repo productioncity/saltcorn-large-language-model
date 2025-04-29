@@ -1,63 +1,45 @@
 /**
  * Saltcorn Large-Language-Model plug-in – bootstrap.
  *
- * For now the plug-in only registers:
- *   • A configuration workflow with placeholders for provider credentials.
- *   • A lightweight diagnostic logger (see ./lib/logger.js).
+ * Now includes harmless stub functions / objects for every optional hook the
+ * Saltcorn loader MAY attempt to call:
+ *   • layout, functions, types, viewtemplates, fieldviews, fileviews
+ * These return empty structures so the loader’s `typeof … === 'function'`
+ * checks succeed (or it simply ignores empty objects/arrays).
  *
  * Author:   Troy Kelly <troy@team.production.city>
- * History:
- *   • 29 Apr 2025 – Initial scaffold and logging helper.            TK
  */
 
 'use strict';
 
-const Logger   = require('./lib/logger');
-const { ENV_DEBUG_VAR, PROVIDERS } = require('./constants');
+const Logger = require('./lib/logger');
+const { ENV_DEBUG_VAR } = require('./constants');
 
-/* --------------------------------------------------------------------- */
-/* 1.  Configuration workflow (runs in Saltcorn admin UI)               */
-/* --------------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* 1.  Configuration workflow                                         */
+/* ------------------------------------------------------------------ */
 function configuration_workflow(cfg = {}) {
-  /* Persist debug flag to logger on form save */
   Logger.configure(cfg);
 
-  const providerSection = (label, fields) => ({
-    name: label,
-    form: {
-      fields,
-    },
-  });
+  const section = (label, fields) => ({ name: label, form: { fields } });
 
   return {
     steps: [
-      /* --------- General settings (debug flag) --------- */
-      providerSection('General', [
-        {
-          name:  'debug_enabled',
-          label: `Enable verbose logging (${ENV_DEBUG_VAR})`,
-          type:  'Bool',
-          default: false,
-        },
+      section('General', [
+        { name: 'debug_enabled', label: `Verbose logging (${ENV_DEBUG_VAR})`, type: 'Bool' },
       ]),
-
-      /* --------- OpenAI -------------------------------- */
-      providerSection('OpenAI', [
+      section('OpenAI', [
         { name: 'openai_endpoint', label: 'Endpoint URL', type: 'String' },
-        { name: 'openai_api_key',  label: 'API Key',      type: 'String', input_type: 'password' },
+        { name: 'openai_api_key',  label: 'API key',      type: 'String', input_type: 'password' },
       ]),
-
-      /* --------- OpenAI-compatible --------------------- */
-      providerSection('OpenAI Compatible', [
+      section('OpenAI Compatible', [
         { name: 'compat_endpoint', label: 'Endpoint URL', type: 'String' },
-        { name: 'compat_api_key',  label: 'API Key',      type: 'String', input_type: 'password' },
+        { name: 'compat_api_key',  label: 'API key',      type: 'String', input_type: 'password' },
         { name: 'compat_completion', label: 'Supports completion', type: 'Bool' },
         { name: 'compat_embedding',  label: 'Supports embedding',  type: 'Bool' },
-        { name: 'compat_images',     label: 'Supports image gen.', type: 'Bool' },
+        { name: 'compat_images',     label: 'Supports images',     type: 'Bool' },
       ]),
-
-      /* --------- Google Vertex ------------------------- */
-      providerSection('Google Vertex AI', [
+      section('Google Vertex AI', [
         {
           name: 'vertex_oauth',
           label: 'Authorise',
@@ -70,27 +52,24 @@ function configuration_workflow(cfg = {}) {
   };
 }
 
-/* --------------------------------------------------------------------- */
-/* 2.  Plug-in export                                                    */
-/* --------------------------------------------------------------------- */
+/* ------------------------------------------------------------------ */
+/* 2.  Plug-in export                                                 */
+/* ------------------------------------------------------------------ */
 module.exports = {
   sc_plugin_api_version: 1,
-  plugin_name: '@productioncity/saltcorn-llm',
 
-  /* ------------ Initialisation --------------------------------------- */
-  init: (cfg = {}) => {
-    Logger.configure(cfg);
-    Logger.info('LLM plug-in initialised (debug %s)', Logger.enabled ? 'on' : 'off');
-  },
-
-  unload: () => {
-    Logger.info('LLM plug-in unloaded.');
-  },
+  /* ---------- Lifecycle -------------------------------------------- */
+  init:  (cfg = {}) => { Logger.configure(cfg); Logger.info('LLM plug-in ready'); },
+  unload:()          => { Logger.info('LLM plug-in unloaded'); },
 
   configuration_workflow,
 
-  /* ------------ Placeholder actions (to be implemented) -------------- */
-  actions: {},
-
-  /* Types, viewtemplates, etc. intentionally left empty for now. */
+  /* ---------- Mandatory / optional hooks (stubs) ------------------- */
+  layout      : () => ({}),          // Saltcorn calls if present
+  types       : [],                  // no custom field-types yet
+  viewtemplates: [],
+  fieldviews  : {},
+  fileviews   : {},
+  functions   : {},                  // custom JS functions
+  actions     : {},                  // actions land here later
 };

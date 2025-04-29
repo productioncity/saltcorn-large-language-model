@@ -27,6 +27,7 @@ services:
       - SALTCORN_SESSION_SECRET=0000000000000000001
       - SALTCORN_FILE_STORE=/filestore
       - SALTCORN_NWORKERS=1
+      - SC_LLM_DEBUG=true
     volumes:
       - "/etc/timezone:/etc/timezone:ro"
       - filestore:/filestore
