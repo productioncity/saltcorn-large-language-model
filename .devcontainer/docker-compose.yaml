@@ -14,11 +14,12 @@ services:
       - ../.env
 
   saltcorn:
-    build:
-      context: .
-      dockerfile: Dockerfile.saltcorn
-      args:
-        - SALTCORN_VERSION=${SALTCORN_VERSION:-1.0.0}
+    image: saltcorn/saltcorn:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.saltcorn
+    #   args:
+    #     - SALTCORN_VERSION=${SALTCORN_VERSION:-1.0.0}
     restart: unless-stopped
     environment:
       - TZ=${TZ:-Australia/Sydney}
