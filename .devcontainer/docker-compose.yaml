@@ -18,7 +18,7 @@ services:
       context: .
       dockerfile: Dockerfile.saltcorn
       args:
-        - SALTCORN_VERSION=${SALTCORN_VERSION:-1.2.0-beta.0}
+        - SALTCORN_VERSION=${SALTCORN_VERSION:-1.0.0}
     restart: unless-stopped
     environment:
       - TZ=${TZ:-Australia/Sydney}
