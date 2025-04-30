@@ -1,41 +1,53 @@
+######################################################################
+# Saltcorn CLI – nested-strategy build
+######################################################################
 FROM node:slim
 
-# System dependencies
+# ────────────────────────────────────────────────────────────────────
+# 1. OS packages
+# ────────────────────────────────────────────────────────────────────
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    libpq-dev build-essential python-is-python3 postgresql-client git chromium libsystemd-dev gosu && \
+        libpq-dev build-essential python-is-python3 postgresql-client \
+        git chromium libsystemd-dev gosu && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
-# Corepack + Yarn 4 setup
-RUN npm install -g corepack && \
-    corepack enable && \
-    yes | corepack prepare yarn@stable --activate && \
-    yarn set version stable && \
-    yarn config set nodeLinker node-modules && \
-    yarn config set enableGlobalCache false && \
-    yarn config set enableImmutableInstalls false
-    # yarn config set cacheFolder /usr/local/share/.cache/yarn
+# ────────────────────────────────────────────────────────────────────
+# 2. NPM – always use nested install strategy
+# ────────────────────────────────────────────────────────────────────
+RUN npm config set install-strategy nested  && \
+    npm config set fund false                && \
+    npm config set audit false
 
-# CLI install
-ARG SALTCORN_VERSION=1.2.0-beta.0
-ENV SALTCORN_VERSION=$SALTCORN_VERSION
+# ────────────────────────────────────────────────────────────────────
+# 3. Install Saltcorn CLI
+# ────────────────────────────────────────────────────────────────────
+ARG  SALTCORN_VERSION=1.2.0-beta.0
+ENV  SALTCORN_VERSION=${SALTCORN_VERSION}
 
-RUN mkdir -p /saltcorn-cli /home/node/.local/share/saltcorn-plugins/plugins_folder && \
+RUN mkdir -p /saltcorn-cli \
+           /home/node/.local/share/saltcorn-plugins/plugins_folder && \
     cd /saltcorn-cli && \
-    yarn init -y && \
-    yarn add "@saltcorn/cli@${SALTCORN_VERSION}" && \
+    npm init -y && \
+    # --install-strategy=nested gives each dep its own node_modules tree
+    npm install --install-strategy=nested --omit=dev "@saltcorn/cli@${SALTCORN_VERSION}" && \
     ln -s /saltcorn-cli/node_modules/.bin/saltcorn /usr/local/bin/saltcorn && \
-    mkdir -p /saltcorn-cli/node_modules/\@saltcorn/cli/node_modules && \
+    # Saltcorn still expects to find a writable node_modules inside its own dir
+    mkdir -p /saltcorn-cli/node_modules/@saltcorn/cli/node_modules && \
     chown -R node:node /saltcorn-cli /home/node
 
-# Runtime environment defaults
+# ────────────────────────────────────────────────────────────────────
+# 4. Runtime env defaults
+# ────────────────────────────────────────────────────────────────────
 ENV NODE_ENV=production \
     SALTCORN_DISABLE_UPGRADE=true \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
     PUID=1000 \
     PGID=1000
 
-# Entrypoint script
+# ────────────────────────────────────────────────────────────────────
+# 5. Entrypoint
+# ────────────────────────────────────────────────────────────────────
 COPY saltcorn-docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
