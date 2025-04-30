@@ -39,7 +39,9 @@ services:
       - ../..:/workspaces:cached
     ports:
       - "3000:3000"
-    command: "/usr/bin/sleep infinity"
+    command:
+      - serve
+      - --verbose
     healthcheck:
       test:
         - CMD

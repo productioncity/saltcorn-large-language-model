@@ -1,43 +1,54 @@
 ######################################################################
-# Saltcorn CLI – nested-strategy build
+# Production-ready Saltcorn image (nested-install, least privilege)
+# -------------------------------------------------------------------
+# • Uses npm’s --install-strategy=nested to replicate legacy, per-package
+#   node_modules layouts that Saltcorn’s runtime plugin loader expects.
 ######################################################################
-FROM node:slim
+
+FROM node:23-slim
 
 # ────────────────────────────────────────────────────────────────────
-# 1. OS packages
+# 1. System packages (root only)
 # ────────────────────────────────────────────────────────────────────
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+RUN set -eux; \
+    apt-get update; \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
         libpq-dev build-essential python-is-python3 postgresql-client \
-        git chromium libsystemd-dev gosu && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
+        git chromium libsystemd-dev gosu; \
+    apt-get clean; \
+    rm -rf /var/lib/apt/lists/*
 
 # ────────────────────────────────────────────────────────────────────
-# 2. NPM – always use nested install strategy
+# 2. Global npm behaviour – nested dependency trees
 # ────────────────────────────────────────────────────────────────────
-RUN npm config set install-strategy nested  && \
-    npm config set fund false                && \
-    npm config set audit false
+RUN npm config set install-strategy nested  \
+ && npm config set fund false                \
+ && npm config set audit false
 
 # ────────────────────────────────────────────────────────────────────
-# 3. Install Saltcorn CLI
+# 3. Saltcorn directories – created *owned* by `node` (no later chown)
+# ────────────────────────────────────────────────────────────────────
+RUN install -d -o node -g node /saltcorn-cli
+
+# ────────────────────────────────────────────────────────────────────
+# 4. Install Saltcorn CLI as unprivileged user
 # ────────────────────────────────────────────────────────────────────
 ARG  SALTCORN_VERSION=1.2.0-beta.0
 ENV  SALTCORN_VERSION=${SALTCORN_VERSION}
 
-RUN mkdir -p /saltcorn-cli \
-           /home/node/.local/share/saltcorn-plugins/plugins_folder && \
-    cd /saltcorn-cli && \
-    npm init -y && \
-    # --install-strategy=nested gives each dep its own node_modules tree
-    npm install --install-strategy=nested --omit=dev "@saltcorn/cli@${SALTCORN_VERSION}" && \
-    ln -s /saltcorn-cli/node_modules/.bin/saltcorn /usr/local/bin/saltcorn && \
-    # Saltcorn still expects to find a writable node_modules inside its own dir
-    mkdir -p /saltcorn-cli/node_modules/@saltcorn/cli/node_modules && \
-    chown -R node:node /saltcorn-cli /home/node
+USER node
+WORKDIR /saltcorn-cli
+RUN npm init -y \
+ && npm install --install-strategy=nested --omit=dev "@saltcorn/cli@${SALTCORN_VERSION}"
 
 # ────────────────────────────────────────────────────────────────────
-# 4. Runtime env defaults
+# 5. Expose CLI globally (root required for /usr/local/bin)
+# ────────────────────────────────────────────────────────────────────
+USER root
+RUN ln -s /saltcorn-cli/node_modules/.bin/saltcorn /usr/local/bin/saltcorn
+
+# ────────────────────────────────────────────────────────────────────
+# 6. Runtime defaults
 # ────────────────────────────────────────────────────────────────────
 ENV NODE_ENV=production \
     SALTCORN_DISABLE_UPGRADE=true \
@@ -46,7 +57,7 @@ ENV NODE_ENV=production \
     PGID=1000
 
 # ────────────────────────────────────────────────────────────────────
-# 5. Entrypoint
+# 7. Entrypoint
 # ────────────────────────────────────────────────────────────────────
 COPY saltcorn-docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
 RUN chmod +x /usr/local/bin/docker-entrypoint.sh
