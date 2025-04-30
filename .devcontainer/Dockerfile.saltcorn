@@ -12,20 +12,21 @@ RUN npm install -g corepack && \
     yes | corepack prepare yarn@stable --activate && \
     yarn set version stable && \
     yarn config set nodeLinker node-modules && \
-    yarn config set enableGlobalCache true && \
-    yarn config set enableImmutableInstalls true && \
-    yarn config set cacheFolder /usr/local/share/.cache/yarn
+    yarn config set enableGlobalCache false && \
+    yarn config set enableImmutableInstalls false
+    # yarn config set cacheFolder /usr/local/share/.cache/yarn
 
 # CLI install
-ARG SALTCORN_VERSION=1.0.0
+ARG SALTCORN_VERSION=1.2.0-beta.0
 ENV SALTCORN_VERSION=$SALTCORN_VERSION
 
-RUN mkdir -p /saltcorn-cli && \
+RUN mkdir -p /saltcorn-cli /home/node/.local/share/saltcorn-plugins/plugins_folder && \
     cd /saltcorn-cli && \
     yarn init -y && \
     yarn add "@saltcorn/cli@${SALTCORN_VERSION}" && \
     ln -s /saltcorn-cli/node_modules/.bin/saltcorn /usr/local/bin/saltcorn && \
-    chown -R node:node /saltcorn-cli
+    mkdir -p /saltcorn-cli/node_modules/\@saltcorn/cli/node_modules && \
+    chown -R node:node /saltcorn-cli /home/node
 
 # Runtime environment defaults
 ENV NODE_ENV=production \
