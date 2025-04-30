@@ -1,15 +1,71 @@
 FROM node:slim
 
 RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y libpq-dev build-essential python-is-python3 postgresql-client git chromium libsystemd-dev && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    libpq-dev build-essential python-is-python3 postgresql-client git chromium libsystemd-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g corepack && \
+    corepack enable && \
+    yes | corepack prepare yarn@stable --activate && \
+    yarn set version stable && \
+    yarn config set nodeLinker node-modules && \
+    yarn config set enableGlobalCache true && \
+    yarn config set enableImmutableInstalls true && \
+    yarn config set cacheFolder /usr/local/share/.cache/yarn
 
 ARG SALTCORN_VERSION=1.0.0
-RUN echo -e "Installing Saltcorn CLI v${SALTCORN_VERSION}\n\n" && \
-    yarn global add @saltcorn/cli@${SALTCORN_VERSION} && \
-    echo -e "\n\nFinished Installing Saltcorn CLI v${SALTCORN_VERSION}\n\n"
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true NODE_ENV=production SALTCORN_DISABLE_UPGRADE=true
+RUN PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    yarn dlx "@saltcorn/cli=${SALTCORN_VERSION}" --help || true
 
-ENTRYPOINT ["/usr/local/bin/saltcorn"]
+RUN printf '#!/bin/sh\nexec yarn dlx @saltcorn/cli@$SALTCORN_VERSION "$$@"\n' > /usr/local/bin/saltcorn && \
+    chmod +x /usr/local/bin/saltcorn
+
+ENV SALTCORN_VERSION=${SALTCORN_VERSION}
+ENV NODE_ENV=production \
+    SALTCORN_DISABLE_UPGRADE=true \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+RUN printf '%s\n' '#!/bin/sh' \
+    'set -eu' \
+    '' \
+    'PG_WAIT_TIMEOUT=${PG_WAIT_TIMEOUT:-300}' \
+    'PG_WAIT_INTERVAL=${PG_WAIT_INTERVAL:-2}' \
+    '' \
+    'if [ -n "${PGHOST:-}" ] && [ -n "${PGPORT:-}" ] && [ -n "${PGUSER:-}" ]; then' \
+    '  start=$(date +%s)' \
+    '  until pg_isready -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" >/dev/null 2>&1; do' \
+    '    if [ $(( $(date +%s) - start )) -ge "$PG_WAIT_TIMEOUT" ]; then' \
+    '      echo "Postgres still unreachable after ${PG_WAIT_TIMEOUT}s — exiting."' \
+    '      exit 1' \
+    '    fi' \
+    '    echo "Waiting for Postgres at ${PGHOST}:${PGPORT}…"' \
+    '    sleep "$PG_WAIT_INTERVAL"' \
+    '  done' \
+    'fi' \
+    '' \
+    '# List of valid Saltcorn CLI commands' \
+    'SALT_COMMANDS="add-schema backup build-app build-cordova-builder configuration-check configuration-check-backups create-tenant create-user delete-tenants delete-user fixtures get-cfg info inspect install-pack install-plugin list-tenants list-triggers list-users migrate modify-user paths plugins reset-schema restore rm-tenant run-benchmark run-js run-sql run-tests run-trigger scheduler serve set-cfg set-daily-time setup setup-benchmark sync-upload-data take-snapshot transform-field dev"' \
+    '' \
+    '# If no args, default to serve' \
+    'if [ $# -eq 0 ]; then' \
+    '  set -- serve' \
+    'fi' \
+    '' \
+    '# Check if the first arg is a valid Saltcorn command' \
+    'for cmd in $SALT_COMMANDS; do' \
+    '  if [ "$1" = "$cmd" ]; then' \
+    '    exec yarn dlx @saltcorn/cli@$SALTCORN_VERSION "$@"' \
+    '  fi' \
+    'done' \
+    '' \
+    '# Not a known Saltcorn command — run it directly' \
+    'exec "$@"' \
+    > /usr/local/bin/docker-entrypoint.sh && \
+    chmod +x /usr/local/bin/docker-entrypoint.sh
+  
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
+
+# Default command — can be overridden
+CMD ["serve"]
