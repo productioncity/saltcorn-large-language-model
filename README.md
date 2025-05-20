@@ -1,6 +1,6 @@
-# Saltcorn Large-Language-Model Plug-in (Scaffold)
+# Saltcorn Large-Language-Model Plug-in
 
-> **Status:** Scaffold only – every method intentionally throws *“Not implemented”*.
+> **Status:** OpenAI provider implemented; other providers remain scaffolds.
 
 This repository provides the framework for integrating Large Language Models
 with the Saltcorn low-code platform.  It aims to support:
@@ -19,7 +19,7 @@ src/plugin/
 │   └── Request.js          → Minimal `fetch` wrapper
 └── providers/
     ├── BaseProvider.js     → Abstract provider class
-    ├── OpenAIProvider.js   → Placeholder
+    ├── OpenAIProvider.js   → Official OpenAI implementation
     ├── OpenAICompatProvider.js
     ├── OlamaProvider.js
     ├── VertexProvider.js
@@ -33,7 +33,13 @@ src/plugin/
    yarn install
 
 3. Load the plug-in into Saltcorn (Admin → Plug-ins → “From folder”).
-4. All UI elements and actions will currently error – functionality is pending.
+4. Configure your OpenAI defaults via the plug-in settings screen. These values
+   include per-model parameters (e.g. `temperature`) and are used when a model is
+   not explicitly provided at call time.
+5. Run `node scripts/build-models.ts` to generate `models-openai.json` which
+   lists the parameters supported by each OpenAI model. Use this as a guide when
+   populating the JSON defaults.
+6. All remaining providers are still scaffolds and will throw when invoked.
 
 ## Licence
 
