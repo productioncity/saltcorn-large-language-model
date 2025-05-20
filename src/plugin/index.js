@@ -1,7 +1,7 @@
 /**
  * Saltcorn Large-Language-Model Plug-in – Minimal scaffold
  *
- * • configuration_workflow → real Workflow instance (single debug checkbox)
+ * • configuration_workflow → Workflow allowing debug and model defaults
  * • actions                → function (returns empty object)
  * • No other hooks exported – Saltcorn supplies defaults
  *
@@ -30,6 +30,26 @@ function configuration_workflow() {
                 name : 'debug_enabled',
                 label: 'Verbose logging',
                 type : 'Bool',
+              },
+              {
+                name : 'openai_default_completion_model',
+                label: 'Default completion model',
+                type : 'String',
+              },
+              {
+                name : 'openai_default_embedding_model',
+                label: 'Default embedding model',
+                type : 'String',
+              },
+              {
+                name : 'openai_default_image_model',
+                label: 'Default image model',
+                type : 'String',
+              },
+              {
+                name : 'openai_model_defaults',
+                label: 'Model default parameters (JSON)',
+                type : 'String',
               },
             ],
           }),
